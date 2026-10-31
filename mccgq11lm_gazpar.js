@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 'use strict';
 
 /**
@@ -64,13 +65,13 @@ const ea = exposes.access;
 function getParams(options) {
     return {
         litersPerPulse: (options && options.liters_per_pulse) || 10,
-        m3PerPulse:     ((options && options.liters_per_pulse) || 10) / 1000,
-        kwhPerM3:       (options && options.kwh_per_m3) || 11.6,
+        m3PerPulse: ((options && options.liters_per_pulse) || 10) / 1000,
+        kwhPerM3: (options && options.kwh_per_m3) || 11.6,
     };
 }
 
 function computeFromPulses(totalPulses, m3PerPulse, kwhPerM3) {
-    const m3  = Math.round(totalPulses * m3PerPulse * 1000) / 1000;
+    const m3 = Math.round(totalPulses * m3PerPulse * 1000) / 1000;
     const kwh = Math.round(m3 * kwhPerM3 * 100) / 100;
     return { gas_pulses: totalPulses, gas_m3: m3, gas_kwh: kwh };
 }
@@ -84,19 +85,23 @@ const fromZigbeeIAS = {
     type: ['attributeReport', 'commandStatusChangeNotification'],
     convert: (model, msg, publish, options, meta) => {
         const log = meta.logger || console;
-        log.debug(`[GAZPAR-IAS] msg.type=${msg.type} msg.data keys=${JSON.stringify(Object.keys(msg.data))} msg.data=${JSON.stringify(msg.data)}`);
+        log.debug(
+            `[GAZPAR-IAS] msg.type=${msg.type} msg.data keys=${JSON.stringify(Object.keys(msg.data))} msg.data=${JSON.stringify(msg.data)}`,
+        );
         log.debug(`[GAZPAR-IAS] options=${JSON.stringify(options)}`);
 
-        const isGazpar    = options && options.gazpar_mode;
-        const zoneStatus  = 'zonestatus' in msg.data ? msg.data.zonestatus : msg.data.zoneStatus;
-        log.debug(`[GAZPAR-IAS] zoneStatus=${zoneStatus} (from '${('zonestatus' in msg.data) ? 'zonestatus' : 'zoneStatus'}')`);
+        const isGazpar = options && options.gazpar_mode;
+        const zoneStatus = 'zonestatus' in msg.data ? msg.data.zonestatus : msg.data.zoneStatus;
+        log.debug(
+            `[GAZPAR-IAS] zoneStatus=${zoneStatus} (from '${'zonestatus' in msg.data ? 'zonestatus' : 'zoneStatus'}')`,
+        );
         if (zoneStatus === undefined) {
             log.debug('[GAZPAR-IAS] zoneStatus undefined, returning');
             return;
         }
-        const contact     = (zoneStatus & 1) === 0;
+        const contact = (zoneStatus & 1) === 0;
         const prevContact = meta.state.contact;
-        const result      = { contact };
+        const result = { contact };
         log.debug(`[GAZPAR-IAS] contact=${contact} prevContact=${prevContact} isGazpar=${isGazpar}`);
 
         if (isGazpar && contact === true && prevContact === false) {
@@ -123,11 +128,11 @@ const fromZigbeeOnOff = {
         const log = meta.logger || console;
         log.debug(`[GAZPAR-ONOFF] msg.type=${msg.type} msg.data=${JSON.stringify(msg.data)}`);
 
-        const isGazpar    = options && options.gazpar_mode;
+        const isGazpar = options && options.gazpar_mode;
         // onOff=0 → contact fermé (true), onOff=1 → contact ouvert (false)
-        const contact     = msg.data.onOff === 0;
+        const contact = msg.data.onOff === 0;
         const prevContact = meta.state.contact;
-        const result      = { contact };
+        const result = { contact };
         log.debug(`[GAZPAR-ONOFF] contact=${contact} prevContact=${prevContact} isGazpar=${isGazpar}`);
 
         if (isGazpar && contact === true && prevContact === false) {
@@ -164,8 +169,8 @@ const fromZigbeeXiaomi = {
         log.debug(`[GAZPAR-XIAOMI] msg.type=${msg.type} msg.data keys=${JSON.stringify(Object.keys(msg.data))}`);
 
         const isGazpar = options && options.gazpar_mode;
-        const result   = {};
-        const raw      = msg.data['65281']; // 0xFF01
+        const result = {};
+        const raw = msg.data['65281']; // 0xFF01
         if (!raw) {
             log.debug('[GAZPAR-XIAOMI] no 65281 data, returning');
             return result;
@@ -176,9 +181,7 @@ const fromZigbeeXiaomi = {
         if (raw['1'] !== undefined) {
             const mv = raw['1'];
             result.voltage = mv;
-            result.battery = Math.min(100, Math.max(0,
-                Math.round((mv - 2500) / (3100 - 2500) * 100)
-            ));
+            result.battery = Math.min(100, Math.max(0, Math.round(((mv - 2500) / (3100 - 2500)) * 100)));
         }
 
         // Température interne
@@ -200,11 +203,11 @@ const fromZigbeeXiaomi = {
 
         // trigger_count absolu — rattrapage impulsions manquées (mode Gazpar)
         if (isGazpar && raw['100'] !== undefined) {
-            const newTC  = raw['100'];
+            const newTC = raw['100'];
             const prevTC = meta.state._raw_trigger_count;
 
             result._raw_trigger_count = newTC;
-            result.trigger_count      = newTC;
+            result.trigger_count = newTC;
 
             if (prevTC !== undefined && newTC !== prevTC) {
                 const { m3PerPulse, kwhPerM3 } = getParams(options);
@@ -218,7 +221,7 @@ const fromZigbeeXiaomi = {
                 }
 
                 if (missed > 0) {
-                    const alreadyCounted = (prevTC === meta.state._ias_pulse_mark) ? missed : 0;
+                    const alreadyCounted = prevTC === meta.state._ias_pulse_mark ? missed : 0;
                     const toAdd = missed - alreadyCounted;
 
                     if (toAdd > 0) {
@@ -241,9 +244,9 @@ const toZigbeeSetM3 = {
     convertSet: async (entity, key, value, meta) => {
         const options = meta.options || {};
         const { m3PerPulse, kwhPerM3 } = getParams(options);
-        const m3     = Math.round(parseFloat(value) * 1000) / 1000;
+        const m3 = Math.round(parseFloat(value) * 1000) / 1000;
         const pulses = Math.round(m3 / m3PerPulse);
-        const kwh    = Math.round(m3 * kwhPerM3 * 100) / 100;
+        const kwh = Math.round(m3 * kwhPerM3 * 100) / 100;
         return {
             state: { gas_m3: m3, gas_kwh: kwh, gas_pulses: pulses },
         };
@@ -255,33 +258,32 @@ function buildExposes(device, options) {
     const isGazpar = options && options.gazpar_mode;
     const isWindow = options && options.window_mode;
 
-    const contactLabel = isGazpar ? 'Aimant détecté (impulsion en cours)'
-                       : isWindow ? 'Fenêtre ouverte'
-                       :            'Porte ouverte';
-    const deviceClass  = isWindow ? 'window' : 'door';
+    const contactLabel = isGazpar
+        ? 'Aimant détecté (impulsion en cours)'
+        : isWindow
+          ? 'Fenêtre ouverte'
+          : 'Porte ouverte';
+    const deviceClass = isWindow ? 'window' : 'door';
 
     const base = [
-        exposes.binary('contact', ea.STATE, true, false)
-            .withDescription(contactLabel),
-        exposes.numeric('device_temperature', ea.STATE)
+        exposes.binary('contact', ea.STATE, true, false).withDescription(contactLabel),
+        exposes
+            .numeric('device_temperature', ea.STATE)
             .withUnit('°C')
             .withDescription('Température interne du capteur'),
-        exposes.numeric('battery', ea.STATE)
-            .withUnit('%')
-            .withDescription('Niveau batterie'),
-        exposes.numeric('voltage', ea.STATE)
-            .withUnit('mV')
-            .withDescription('Tension batterie'),
-        exposes.numeric('elapsed', ea.STATE)
+        exposes.numeric('battery', ea.STATE).withUnit('%').withDescription('Niveau batterie'),
+        exposes.numeric('voltage', ea.STATE).withUnit('mV').withDescription('Tension batterie'),
+        exposes
+            .numeric('elapsed', ea.STATE)
             .withUnit('ms')
             .withDescription('Temps depuis dernier événement — heartbeat toutes ~50 min'),
-        exposes.numeric('power_outage_count', ea.STATE)
-            .withDescription('Nombre de coupures alimentation détectées'),
+        exposes.numeric('power_outage_count', ea.STATE).withDescription('Nombre de coupures alimentation détectées'),
     ];
 
     if (isGazpar) {
         const kwhPerM3 = (options && options.kwh_per_m3) || 11.6;
-        const gasM3 = exposes.numeric('gas_m3', ea.STATE_SET)
+        const gasM3 = exposes
+            .numeric('gas_m3', ea.STATE_SET)
             .withUnit('m³')
             .withValueMin(0)
             .withValueStep(0.01)
@@ -289,7 +291,8 @@ function buildExposes(device, options) {
         gasM3.device_class = 'gas';
         gasM3.state_class = 'total_increasing';
 
-        const gasKwh = exposes.numeric('gas_kwh', ea.STATE)
+        const gasKwh = exposes
+            .numeric('gas_kwh', ea.STATE)
             .withUnit('kWh')
             .withDescription(`Énergie gaz (PCS = ${kwhPerM3} kWh/m³)`);
         gasKwh.device_class = 'energy';
@@ -298,9 +301,9 @@ function buildExposes(device, options) {
         base.push(
             gasM3,
             gasKwh,
-            exposes.numeric('gas_pulses', ea.STATE)
-                .withDescription('Nombre total d\'impulsions comptées'),
-            exposes.numeric('trigger_count', ea.STATE)
+            exposes.numeric('gas_pulses', ea.STATE).withDescription("Nombre total d'impulsions comptées"),
+            exposes
+                .numeric('trigger_count', ea.STATE)
                 .withDescription('Compteur interne capteur (absolu, RAZ au remplacement pile)'),
         );
     }
@@ -310,15 +313,13 @@ function buildExposes(device, options) {
 
 // ─── DÉFINITION ──────────────────────────────────────────────────────────────
 const definition = {
-    fingerprint: [
-        { modelID: 'lumi.sensor_magnet.aq2', manufacturerName: 'LUMI' },
-    ],
+    fingerprint: [{ modelID: 'lumi.sensor_magnet.aq2', manufacturerName: 'LUMI' }],
     model: 'MCCGQ11LM',
     vendor: 'LUMI',
     description: 'Aqara door/window sensor (+ mode compteur Gazpar optionnel)',
     fromZigbee: [fromZigbeeIAS, fromZigbeeOnOff, fromZigbeeXiaomi],
-    toZigbee:   [toZigbeeSetM3],
-    exposes:    buildExposes,
+    toZigbee: [toZigbeeSetM3],
+    exposes: buildExposes,
 
     // STABILITÉ : désactiver OTA.
     // Les vérifications OTA envoient des trames que le firmware Aqara
@@ -334,16 +335,22 @@ const definition = {
     configure: async () => {},
 
     options: [
-        exposes.binary('gazpar_mode', ea.SET, true, false)
-            .withDescription('Activer le mode compteur gaz Gazpar'),
-        exposes.binary('window_mode', ea.SET, true, false)
+        exposes.binary('gazpar_mode', ea.SET, true, false).withDescription('Activer le mode compteur gaz Gazpar'),
+        exposes
+            .binary('window_mode', ea.SET, true, false)
             .withDescription('Présenter comme capteur de fenêtre (au lieu de porte)'),
-        exposes.numeric('kwh_per_m3', ea.SET)
-            .withValueMin(8).withValueMax(14).withValueStep(0.01)
+        exposes
+            .numeric('kwh_per_m3', ea.SET)
+            .withValueMin(8)
+            .withValueMax(14)
+            .withValueStep(0.01)
             .withUnit('kWh/m³')
             .withDescription('PCS local GRDF (défaut 11.6 kWh/m³)'),
-        exposes.numeric('liters_per_pulse', ea.SET)
-            .withValueMin(1).withValueMax(100).withValueStep(1)
+        exposes
+            .numeric('liters_per_pulse', ea.SET)
+            .withValueMin(1)
+            .withValueMax(100)
+            .withValueStep(1)
             .withUnit('L')
             .withDescription('Litres par impulsion (défaut 10 L) — ne pas utiliser debounce en mode Gazpar'),
     ],

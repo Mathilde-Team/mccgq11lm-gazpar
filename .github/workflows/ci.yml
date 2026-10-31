@@ -1,0 +1,59 @@
+# CI du socle Mathilde-Team. Le job « Qualité (lint, tests) » est un check
+# requis sur main et dev (.github/branch-protection/*.json) : garder son nom.
+# Dépôt Node (convertisseur Zigbee2MQTT, JavaScript pur) : le lint est
+# prettier (script npm « lint »), les tests le runner natif `node --test`
+# avec couverture. Le seuil (lignes et branches) est déclaré une seule fois
+# dans package.json, script « test:coverage » (options --test-coverage-*,
+# Node ≥ 22.8) : ni la CI ni le Makefile ne recopient la valeur.
+# Versions figées : Node 22.23.4 (LTS), prettier du package-lock.json.
+name: CI
+
+'on':
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Qualité (lint, tests)
+    runs-on: ${{ fromJSON(vars.RUNS_ON_LINUX || '{"group":"maison","labels":["self-hosted","linux"]}') }}
+    # Leçon AsyncRdp4#59 / SwitchCapture#98 : tout job borné dans le temps.
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v7
+
+      - name: Installation de Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.23.4
+          cache: npm
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      - name: Installation de uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
+
+      - name: Installation de Python
+        run: uv python install 3.13
+
+      - name: Lint YAML (yamllint --strict)
+        run: uvx yamllint==1.38.0 --strict -c .yamllint.yaml .
+
+      - name: Syntaxe des scripts Python
+        run: uv run --no-project --python 3.13 python -m py_compile scripts/*.py
+
+      - name: Lint et format (prettier)
+        run: npm run lint
+
+      # Tests et couverture (SOCLE.md §4) : seuil dans package.json
+      # (script « test:coverage »), 95 % lignes et branches atteint (issue #6).
+      - name: Tests et couverture (seuil dans package.json)
+        run: npm run test:coverage

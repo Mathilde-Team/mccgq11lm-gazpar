@@ -31,10 +31,9 @@ Capteur Aqara MCCGQ11LM                    Compteur Gazpar
 ### Détail des connexions
 
 | Capteur Aqara | Fil      | Compteur Gazpar  |
-|---------------|----------|------------------|
+| ------------- | -------- | ---------------- |
 | **GND**       | fil GND  | **Contact HAUT** |
 | **D+** (data) | fil data | **Contact BAS**  |
-
 
 ### Résistance pull-up
 
@@ -70,55 +69,57 @@ external_converters:
 
 # Timeout disponibilité : 3× le heartbeat Aqara (~50 min)
 availability:
-  active:
-    timeout: 200
+    active:
+        timeout: 200
 
 devices:
-  '0x00158d00XXXXXXXX':
-    friendly_name: 'Contact Gazpar'
-    device_options:
-      gazpar_mode: true
-      kwh_per_m3: 11.6         # PCS local GRDF
-      liters_per_pulse: 10     # 10 L/impulsion (défaut Gazpar)
+    '0x00158d00XXXXXXXX':
+        friendly_name: 'Contact Gazpar'
+        device_options:
+            gazpar_mode: true
+            kwh_per_m3: 11.6 # PCS local GRDF
+            liters_per_pulse: 10 # 10 L/impulsion (défaut Gazpar)
 
-  '0x00158d00YYYYYYYY':
-    friendly_name: 'Porte cuisine'
-    # Pas de device_options → comportement porte standard
+    '0x00158d00YYYYYYYY':
+        friendly_name: 'Porte cuisine'
+        # Pas de device_options → comportement porte standard
 
-  '0x00158d00ZZZZZZZZ':
-    friendly_name: 'Fenêtre chambre'
-    device_options:
-      window_mode: true        # Présenter comme fenêtre
+    '0x00158d00ZZZZZZZZ':
+        friendly_name: 'Fenêtre chambre'
+        device_options:
+            window_mode: true # Présenter comme fenêtre
 ```
 
 ## Entités exposées
 
 ### Mode standard (porte/fenêtre)
-| Entité | Type | Description |
-|---|---|---|
-| `contact` | binary | État du contact (ouvert/fermé) |
-| `battery` | % | Niveau batterie |
-| `voltage` | mV | Tension batterie |
-| `device_temperature` | °C | Température interne capteur |
-| `elapsed` | ms | Temps depuis dernier événement |
-| `power_outage_count` | count | Coupures alimentation |
+
+| Entité               | Type   | Description                    |
+| -------------------- | ------ | ------------------------------ |
+| `contact`            | binary | État du contact (ouvert/fermé) |
+| `battery`            | %      | Niveau batterie                |
+| `voltage`            | mV     | Tension batterie               |
+| `device_temperature` | °C     | Température interne capteur    |
+| `elapsed`            | ms     | Temps depuis dernier événement |
+| `power_outage_count` | count  | Coupures alimentation          |
 
 ### Mode Gazpar (en plus)
-| Entité | Type | Description |
-|---|---|---|
-| `gas_m3` | m³ | Index gaz cumulé (éditable) |
-| `gas_kwh` | kWh | Énergie gaz (PCS × m³) |
-| `gas_pulses` | count | Nombre total d'impulsions comptées |
-| `trigger_count` | count | Compteur interne capteur (absolu) |
+
+| Entité          | Type  | Description                        |
+| --------------- | ----- | ---------------------------------- |
+| `gas_m3`        | m³    | Index gaz cumulé (éditable)        |
+| `gas_kwh`       | kWh   | Énergie gaz (PCS × m³)             |
+| `gas_pulses`    | count | Nombre total d'impulsions comptées |
+| `trigger_count` | count | Compteur interne capteur (absolu)  |
 
 ## Options
 
-| Option | Type | Défaut | Description |
-|---|---|---|---|
-| `gazpar_mode` | bool | false | Activer le comptage gaz |
-| `window_mode` | bool | false | Présenter comme fenêtre |
-| `kwh_per_m3` | float | 11.6 | PCS gaz local (kWh/m³) |
-| `liters_per_pulse` | int | 10 | Volume par impulsion (litres) |
+| Option             | Type  | Défaut | Description                   |
+| ------------------ | ----- | ------ | ----------------------------- |
+| `gazpar_mode`      | bool  | false  | Activer le comptage gaz       |
+| `window_mode`      | bool  | false  | Présenter comme fenêtre       |
+| `kwh_per_m3`       | float | 11.6   | PCS gaz local (kWh/m³)        |
+| `liters_per_pulse` | int   | 10     | Volume par impulsion (litres) |
 
 ## Stabilité Aqara / Zigbee
 
@@ -136,6 +137,21 @@ Les MCCGQ11LM sont capricieux hors hub Aqara natif. Protections appliquées :
 
 **Réseau** : préférer des routeurs IKEA Tradfri ou Sonoff proches des capteurs. Ne PAS utiliser de `debounce` en mode Gazpar (impulsions courtes ~200 ms).
 
+## Socle qualité Mathilde-Team
+
+Ce dépôt suit le [socle qualité de l'équipe](https://github.com/Mathilde-Team/.github/blob/main/SOCLE.md) :
+
+- **`main`** (livraison) et **`dev`** (intégration) protégées. On n'y pousse jamais directement : PR vers `dev`, puis PR `dev` → `main`.
+- **CI** : job « Qualité (lint, tests) », requis sur les deux branches (`.github/workflows/ci.yml`) — prettier, yamllint, tests Node avec couverture.
+- **Garde** : `.github/workflows/guard-main.yml` refuse les PR vers `main` qui ne viennent pas de `dev`.
+- **Mise à jour des PR** : `.github/workflows/maj-branches.yml` met à jour les PR vers `dev` à chaque avancée de `dev` (SOCLE §11). Label `pas-de-maj-auto` pour exclure une PR ; une PR `resolu-par-ia` repasse en brouillon : la relire avant _Ready for review_.
+- **Protections versionnées** : `.github/branch-protection/{main,dev}.json`, vérifiées chaque jour par le workflow « Protection des branches ». Un administrateur les applique via `scripts/appliquer_socle.sh Mathilde-Team/mccgq11lm-gazpar`.
+- **Version** : déclarée une seule fois, dans `package.json` (`version`), tag `vX.Y.Z` au commit de release (SOCLE §1).
+- **Couverture des tests** : seuil bloquant de **95 %**, lignes et branches comprises (décision d'équipe du 21/10/2026, [.github#9](https://github.com/Mathilde-Team/.github/issues/9)). Dépôt sans test : le seuil part de la mesure du jour dans `package.json` (script `test:coverage`, options `--test-coverage-*`) et monte à chaque PR de tests (issue #6) jusqu'à 95.
+- **Licence** : MIT, exception documentée au socle (issue #4) — fichier `LICENSE` à la racine, champ `license` de `package.json`, entrée dans `audit-exceptions.json` du dépôt `.github`.
+
 ## Licence
 
-MIT
+MIT — texte officiel dans le fichier [`LICENSE`](LICENSE).
+
+Exception assumée au [socle qualité de l'équipe](https://github.com/Mathilde-Team/.github/blob/main/SOCLE.md) (§1 : GPL-3.0-or-later par défaut) : ce convertisseur est une création originale diffusée dans l'écosystème Zigbee2MQTT (MIT), sans emprunt de code GPL ; sa seule dépendance, `zigbee-herdsman-converters`, est MIT. L'exception est consignée dans `audit-exceptions.json` du dépôt [`.github`](https://github.com/Mathilde-Team/.github) (issue #4).
