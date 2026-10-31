@@ -148,8 +148,10 @@ Ce dépôt suit le [socle qualité de l'équipe](https://github.com/Mathilde-Tea
 - **Protections versionnées** : `.github/branch-protection/{main,dev}.json`, vérifiées chaque jour par le workflow « Protection des branches ». Un administrateur les applique via `scripts/appliquer_socle.sh Mathilde-Team/mccgq11lm-gazpar`.
 - **Version** : déclarée une seule fois, dans `package.json` (`version`), tag `vX.Y.Z` au commit de release (SOCLE §1).
 - **Couverture des tests** : seuil bloquant de **95 %**, lignes et branches comprises (décision d'équipe du 21/10/2026, [.github#9](https://github.com/Mathilde-Team/.github/issues/9)). Dépôt sans test : le seuil part de la mesure du jour dans `package.json` (script `test:coverage`, options `--test-coverage-*`) et monte à chaque PR de tests (issue #6) jusqu'à 95.
-- **Licence** : à trancher (issue #4) — `package.json` déclare MIT, le socle attend GPL-3.0-or-later par défaut ou une exception documentée.
+- **Licence** : MIT, exception documentée au socle (issue #4) — fichier `LICENSE` à la racine, champ `license` de `package.json`, entrée dans `audit-exceptions.json` du dépôt `.github`.
 
 ## Licence
 
-MIT
+MIT — texte officiel dans le fichier [`LICENSE`](LICENSE).
+
+Exception assumée au [socle qualité de l'équipe](https://github.com/Mathilde-Team/.github/blob/main/SOCLE.md) (§1 : GPL-3.0-or-later par défaut) : ce convertisseur est une création originale diffusée dans l'écosystème Zigbee2MQTT (MIT), sans emprunt de code GPL ; sa seule dépendance, `zigbee-herdsman-converters`, est MIT. L'exception est consignée dans `audit-exceptions.json` du dépôt [`.github`](https://github.com/Mathilde-Team/.github) (issue #4).
