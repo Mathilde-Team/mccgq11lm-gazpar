@@ -7,7 +7,7 @@
         "lint": "prettier --check .",
         "format": "prettier --write .",
         "test": "node --test",
-        "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=0 --test-coverage-branches=0"
+        "test:coverage": "node --test --experimental-test-coverage --test-coverage-include=mccgq11lm_gazpar.js --test-coverage-lines=95 --test-coverage-branches=95"
     },
     "engines": {
         "node": ">=22.8"
@@ -21,7 +21,8 @@
     ],
     "license": "MIT",
     "devDependencies": {
-        "prettier": "^3.2"
+        "prettier": "^3.2",
+        "zigbee-herdsman-converters": "^26.125.0"
     },
     "prettier": {
         "singleQuote": true,
