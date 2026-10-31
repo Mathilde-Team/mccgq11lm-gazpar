@@ -1,6 +1,4 @@
 node_modules/
 *.log
 .vscode/
-
-# Notes internes avec infos perso
-claude.md
+__pycache__/
