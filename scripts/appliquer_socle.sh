@@ -36,13 +36,23 @@ else
 fi
 
 # Noms des jobs (clé `name:`) de tous les workflows du dépôt cible, sur dev et main.
+# Une branche sans `.github/workflows` (main avant sa première sync depuis dev)
+# est ignorée : `gh api` y répond 404 et écrit le corps d'erreur sur stdout, que
+# la substitution prendrait pour des chemins de fichiers. On vérifie le code de
+# sortie et on passe à la ref suivante : l'union des jobs de dev suffit.
 jobs="$travail/jobs.txt"
 : > "$jobs"
 for ref in dev main; do
-  for chemin in $(gh api "repos/$depot/contents/.github/workflows?ref=$ref" --jq '.[].path' 2>/dev/null); do
+  if ! gh api "repos/$depot/contents/.github/workflows?ref=$ref" --jq '.[].path' \
+      > "$travail/chemins.txt" 2>/dev/null; then
+    echo "workflows : absents sur $ref (branche ignorée)" >&2
+    continue
+  fi
+  while IFS= read -r chemin; do
+    [ -n "$chemin" ] || continue
     gh api "repos/$depot/contents/$chemin?ref=$ref" --jq .content | base64 -d \
       | sed -n 's/^    name: *//p' | sed 's/^"\(.*\)"$/\1/; s/^'\''\(.*\)'\''$/\1/' >> "$jobs"
-  done
+  done < "$travail/chemins.txt"
 done
 
 for branche in main dev; do
