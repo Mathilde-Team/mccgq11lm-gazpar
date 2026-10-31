@@ -54,7 +54,6 @@ jobs:
         run: npm run lint
 
       # Tests et couverture (SOCLE.md §4) : seuil dans package.json
-      # (script « test:coverage »), mesure du jour 0 % (aucun test),
-      # l'issue #6 relève le seuil par paliers jusqu'à 95 %.
+      # (script « test:coverage »), 95 % lignes et branches atteint (issue #6).
       - name: Tests et couverture (seuil dans package.json)
         run: npm run test:coverage
