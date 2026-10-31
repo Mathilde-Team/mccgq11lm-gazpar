@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 'use strict';
 
 // Tests du convertisseur externe Zigbee2MQTT (issue #6).
