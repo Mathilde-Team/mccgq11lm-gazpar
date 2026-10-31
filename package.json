@@ -1,21 +1,43 @@
 {
-  "name": "mccgq11lm-gazpar",
-  "version": "1.0.0",
-  "description": "Zigbee2MQTT external converter — Aqara MCCGQ11LM with Gazpar gas meter mode",
-  "main": "mccgq11lm_gazpar.js",
-  "scripts": {
-    "lint": "prettier --check .",
-    "format": "prettier --write ."
-  },
-  "keywords": ["zigbee2mqtt", "aqara", "gazpar", "gas-meter", "mccgq11lm"],
-  "license": "MIT",
-  "devDependencies": {
-    "prettier": "^3.2"
-  },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "all",
-    "printWidth": 120,
-    "tabWidth": 4
-  }
+    "name": "mccgq11lm-gazpar",
+    "version": "1.0.0",
+    "description": "Zigbee2MQTT external converter — Aqara MCCGQ11LM with Gazpar gas meter mode",
+    "main": "mccgq11lm_gazpar.js",
+    "scripts": {
+        "lint": "prettier --check .",
+        "format": "prettier --write .",
+        "test": "node --test",
+        "test:coverage": "node --test --experimental-test-coverage --test-coverage-lines=0 --test-coverage-branches=0"
+    },
+    "engines": {
+        "node": ">=22.8"
+    },
+    "keywords": [
+        "zigbee2mqtt",
+        "aqara",
+        "gazpar",
+        "gas-meter",
+        "mccgq11lm"
+    ],
+    "license": "MIT",
+    "devDependencies": {
+        "prettier": "^3.2"
+    },
+    "prettier": {
+        "singleQuote": true,
+        "trailingComma": "all",
+        "printWidth": 120,
+        "tabWidth": 4,
+        "overrides": [
+            {
+                "files": [
+                    "*.yaml",
+                    "*.yml"
+                ],
+                "options": {
+                    "tabWidth": 2
+                }
+            }
+        ]
+    }
 }
